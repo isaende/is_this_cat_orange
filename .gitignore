@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.pt
+static/uploads/*
+static/crops/*
+!static/uploads/.gitkeep
+!static/crops/.gitkeep

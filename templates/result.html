@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ result.message }} - is this cat orange??</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel result-panel">
+        <p class="eyebrow">result</p>
+        <h1>{{ result.message }}</h1>
+        <p class="subtle">Detected fur color: <strong>{{ result.label }}</strong></p>
+
+        <div class="image-grid">
+          <figure>
+            <img src="{{ result.original_url }}" alt="Uploaded cat image">
+            <figcaption>Original</figcaption>
+          </figure>
+          <figure>
+            <img src="{{ result.crop_url }}" alt="YOLO cat crop">
+            <figcaption>YOLO crop</figcaption>
+          </figure>
+        </div>
+
+        <dl class="metrics">
+          <div>
+            <dt>YOLO confidence</dt>
+            <dd>{{ "%.1f"|format(result.cat_detection.confidence * 100) }}%</dd>
+          </div>
+          <div>
+            <dt>Orange score</dt>
+            <dd>{{ "%.1f"|format(result.orange_score * 100) }}%</dd>
+          </div>
+        </dl>
+
+        <a class="link-button" href="{{ url_for('index') }}">Analyze another cat</a>
+      </section>
+    </main>
+  </body>
+</html>
