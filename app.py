@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import logging
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -10,19 +11,72 @@ import cv2
 import numpy as np
 from flask import Flask, jsonify, render_template, request, url_for
 from werkzeug.datastructures import FileStorage
+from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.serving import WSGIRequestHandler
 from werkzeug.utils import secure_filename
 
 
 BASE_DIR = Path(__file__).resolve().parent
-UPLOAD_DIR = BASE_DIR / "static" / "uploads"
-CROP_DIR = BASE_DIR / "static" / "crops"
+FRONTEND_DIR = BASE_DIR / "frontend"
+UPLOAD_DIR = FRONTEND_DIR / "uploads"
+CROP_DIR = FRONTEND_DIR / "crops"
 CONFIDENCE_THRESHOLD = float(os.getenv("YOLO_CONFIDENCE", "0.25"))
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+HAPPY_IMAGE = "images/cat_happy.png"
+CONFUSED_IMAGE = "images/confused.jpg"
+SILLY_IMAGE = "images/silly.png"
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_folder=str(FRONTEND_DIR),
+    template_folder=str(FRONTEND_DIR / "html"),
+)
 app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024
 
 _yolo_model: Any | None = None
+
+
+class QuietRequestHandler(WSGIRequestHandler):
+    def log(self, type: str, message: str, *args: Any) -> None:
+        return
+
+
+logging.getLogger("werkzeug").disabled = True
+
+
+@app.after_request
+def add_api_cors_headers(response: Any) -> Any:
+    if request.path.startswith("/api/"):
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+
+    return response
+
+
+def api_json(payload: dict[str, Any], status_code: int) -> tuple[Any, int]:
+    response = jsonify(payload)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    return response, status_code
+
+
+def reaction_image_for_result(is_orange: bool, label: str) -> str:
+    if is_orange:
+        return url_for("static", filename=HAPPY_IMAGE)
+
+    if label == "mixed/unknown":
+        return url_for("static", filename=CONFUSED_IMAGE)
+
+    return url_for("static", filename=SILLY_IMAGE)
+
+
+def reaction_image_for_error(message: str) -> str:
+    if "Nenhum gato" in message or "nenhum deles parece ser um gato" in message:
+        return url_for("static", filename=SILLY_IMAGE)
+
+    return url_for("static", filename=SILLY_IMAGE)
 
 
 def resolve_model_path() -> Path:
@@ -362,6 +416,7 @@ def analyze_image(upload: FileStorage) -> dict[str, Any]:
         "cat_detection": asdict(cat_box),
         "original_url": url_for("static", filename=f"uploads/{original_saved}"),
         "crop_url": url_for("static", filename=f"crops/{crop_saved}"),
+        "reaction_image_url": reaction_image_for_result(color.is_orange, color.label),
     }
 
 
@@ -383,13 +438,35 @@ def analyze_page() -> tuple[str, int] | str:
 def analyze_api() -> tuple[Any, int]:
     try:
         result = analyze_image(request.files.get("image"))  # type: ignore[arg-type]
-        return jsonify(result), 200
+        return api_json(result, 200)
     except AnalysisError as exc:
-        return jsonify({"error": str(exc)}), exc.status_code
+        message = str(exc)
+        return api_json(
+            {"error": message, "reaction_image_url": reaction_image_for_error(message)},
+            exc.status_code,
+        )
+    except RequestEntityTooLarge:
+        message = "Imagem muito grande. Use um arquivo de ate 12 MB."
+        return api_json(
+            {"error": message, "reaction_image_url": reaction_image_for_error(message)},
+            413,
+        )
+    except Exception:
+        message = "Nao consegui analisar essa imagem agora."
+        return api_json(
+            {"error": message, "reaction_image_url": reaction_image_for_error(message)},
+            500,
+        )
 
 
 if __name__ == "__main__":
     ensure_runtime_dirs()
-    port = int(os.getenv("PORT", "5000"))
-    debug = os.getenv("FLASK_DEBUG", "1").strip().lower() not in {"0", "false", "no"}
-    app.run(host="127.0.0.1", port=port, debug=debug, use_reloader=debug)
+    port = int(os.getenv("PORT", "5001"))
+    debug = os.getenv("FLASK_DEBUG", "0").strip().lower() not in {"0", "false", "no"}
+    app.run(
+        host="127.0.0.1",
+        port=port,
+        debug=debug,
+        use_reloader=debug,
+        request_handler=QuietRequestHandler,
+    )

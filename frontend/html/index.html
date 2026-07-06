@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test the cat</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="/frontend/css/style.css">
+
+</head>
+
+<body>
+
+  <section class="container">
+
+    <header class="header">
+      <img class="logo" src="/frontend/images/logo.png" alt="">
+      <nav class="nav-links">
+        <a href="#cat-test">cat test</a>
+        <a href="#orange-cat-theory">orange cat theory</a>
+        <a class="button" href="#contact">contact</a>
+      </nav>
+    </header>
+
+
+    <div class="hero">
+
+      <div class="home-title">
+        <h1>
+          <span>Is this cat</span>
+          <strong>orange</strong>
+        </h1>
+        <p>Upload a image and test if this cat is orange, it's always good to check</p>
+        <a class="button" href="#cat-test">TEST THE CAT</a>
+      </div>
+
+    </div>
+    <div aria-hidden="true">
+      <img class="hero-cat" src="/frontend/images/orange1-remove-bg-io.png" alt="">
+    </div>
+
+  </section>
+
+
+  <section id="cat-test" class="test-page container">
+
+    <div class="test-intro">
+      <p class="eyebrow">Cat analyzer</p>
+      <h1 id="test-title">Test the cat</h1>
+      <p>Upload a photo of your cat, or any cat you find, and check whether it has orange fur. The image is cropped around
+      the cat so the analysis can focus on the fur instead of the background.</p>
+
+      <p>The system uses YOLOv11 from Ultralytics to detect the cat, then OpenCV and NumPy with HSV color rules to estimate
+      the cat's fur color.</p>
+    </div>
+
+        <form class="form" id="cat-form" action="/analyze" method="post" enctype="multipart/form-data">
+      <span class="form-title">Upload your file</span>
+      <p class="form-paragraph" id="upload-status">
+        File should be an image
+      </p>
+      <label for="file-input" class="drop-container" id="drop-container">
+        <span class="drop-title">Drop files here</span>
+        or
+        <input type="file" accept="image/*" required="" id="file-input" name="image">
+      </label>
+      <button class="analyze-button" type="submit">Analyze cat</button>
+    </form>
+
+  </section>
+
+  <div class="result-modal" id="result-modal" hidden>
+    <div class="result-backdrop" data-close-result></div>
+    <section class="panel result-panel result-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-result-title">
+      <button class="modal-close" type="button" data-close-result>Close</button>
+      <div class="result-heading">
+        <div class="result-copy">
+          <p class="eyebrow">result</p>
+          <h1 id="modal-result-title">Analyzing cat...</h1>
+          <p class="subtle" id="result-summary">Detected fur color: <strong id="result-label">waiting</strong></p>
+          <p class="subtle" id="result-error" hidden></p>
+          <p class="subtle" id="result-status">Sending image to the analyzer...</p>
+        </div>
+        <img class="result-reaction" id="result-reaction" src="/frontend/images/silly.png" alt="" hidden>
+      </div>
+
+      <div class="image-grid" id="result-images">
+        <figure>
+          <img id="result-original" src="" alt="Uploaded cat image">
+          <figcaption>Original</figcaption>
+        </figure>
+        <figure>
+          <img id="result-crop" src="" alt="YOLO cat crop">
+          <figcaption>YOLO crop</figcaption>
+        </figure>
+      </div>
+
+      <dl class="metrics" id="result-metrics">
+        <div>
+          <dt>YOLO confidence</dt>
+          <dd id="result-confidence">--</dd>
+        </div>
+        <div>
+          <dt>Orange score</dt>
+          <dd id="result-orange-score">--</dd>
+        </div>
+      </dl>
+    </section>
+  </div>
+
+  <section id="orange-cat-theory" class="theory-section cont">
+
+    <figure class="theory-image">
+      <img src="/frontend/images/image.png" alt="Wide-eyed orange cat">
+    </figure>
+
+    <div class="theory-text">
+      <p class="eyebrow">Shared Single Brain Cell</p>
+      <h2 id="theory-title">The orange cat theory</h2>
+      <p>
+        The Orange Cat Theory, tells all orange cats share a single,
+        collective brain cell. According to the theory, this "lack of brainpower"
+        explains why they are notoriously clumsy, chaotic, and constantly caught doing absurd things or
+        staring blankly into space.
+      </p>
+      <p>
+        It's not a scientific theory, but rather a collective observation by thousands of cat owners online.
+      </p>
+    </div>
+
+  </section>
+
+  <footer id="contact" class="site-footer" aria-label="Contacts">
+    <img class="footer-cat" src="/frontend/images/cat_ears.png" alt="" aria-hidden="true">
+    <strong>Contacts</strong>
+    <a href="https://www.linkedin.com/in/isabella-monteiro-bb0371302" target="_blank" rel="noreferrer">linkedin</a>
+    <a href="mailto:isa.ende07@gmail.com">email</a>
+    <a href="https://github.com/isaende" target="_blank" rel="noreferrer">github</a>
+  </footer>
+
+  <script>
+    const form = document.querySelector("#cat-form");
+    const fileInput = document.querySelector("#file-input");
+    const dropContainer = document.querySelector("#drop-container");
+    const uploadStatus = document.querySelector("#upload-status");
+    const modal = document.querySelector("#result-modal");
+    const resultTitle = document.querySelector("#modal-result-title");
+    const resultLabel = document.querySelector("#result-label");
+    const resultSummary = document.querySelector("#result-summary");
+    const resultError = document.querySelector("#result-error");
+    const resultStatus = document.querySelector("#result-status");
+    const resultReaction = document.querySelector("#result-reaction");
+    const resultImages = document.querySelector("#result-images");
+    const resultOriginal = document.querySelector("#result-original");
+    const resultCrop = document.querySelector("#result-crop");
+    const resultMetrics = document.querySelector("#result-metrics");
+    const resultConfidence = document.querySelector("#result-confidence");
+    const resultOrangeScore = document.querySelector("#result-orange-score");
+
+    const formatPercent = (value) => `${(value * 100).toFixed(1)}%`;
+
+    function analyzeUrl() {
+      if (window.location.port === "5001") {
+        return "/api/analyze";
+      }
+
+      const host = window.location.hostname || "127.0.0.1";
+      return `http://${host}:5001/api/analyze`;
+    }
+
+    function assetUrl(path) {
+      if (!path || path.startsWith("http")) {
+        return path;
+      }
+
+      if (window.location.port === "5001") {
+        return path;
+      }
+
+      const host = window.location.hostname || "127.0.0.1";
+      return `http://${host}:5001${path}`;
+    }
+
+    function fallbackReactionImage(result) {
+      if (result && result.is_orange) {
+        return "/frontend/images/cat_happy.png";
+      }
+
+      if (result && result.label === "mixed/unknown") {
+        return "/frontend/images/confused.jpg";
+      }
+
+      return "/frontend/images/silly.png";
+    }
+
+    function validateResult(result) {
+      return result
+        && result.message
+        && result.label
+        && result.original_url
+        && result.crop_url
+        && result.cat_detection
+        && typeof result.cat_detection.confidence === "number"
+        && typeof result.orange_score === "number";
+    }
+
+    function openResultModal() {
+      modal.hidden = false;
+      document.body.classList.add("modal-open");
+    }
+
+    function closeResultModal() {
+      modal.hidden = true;
+      document.body.classList.remove("modal-open");
+    }
+
+    function setLoadingState() {
+      openResultModal();
+      uploadStatus.textContent = "Analyzing image...";
+      resultTitle.textContent = "Analyzing cat...";
+      resultSummary.hidden = false;
+      resultError.hidden = true;
+      resultError.textContent = "";
+      resultStatus.hidden = false;
+      resultStatus.textContent = "Sending image to the analyzer...";
+      resultReaction.hidden = true;
+      resultLabel.textContent = "waiting";
+      resultImages.hidden = true;
+      resultMetrics.hidden = true;
+      resultOriginal.removeAttribute("src");
+      resultCrop.removeAttribute("src");
+      resultConfidence.textContent = "--";
+      resultOrangeScore.textContent = "--";
+    }
+
+    function showResult(result) {
+      uploadStatus.textContent = "Analysis complete";
+      resultTitle.textContent = result.message;
+      resultSummary.hidden = false;
+      resultError.hidden = true;
+      resultError.textContent = "";
+      resultStatus.hidden = true;
+      resultStatus.textContent = "";
+      resultReaction.src = assetUrl(result.reaction_image_url || fallbackReactionImage(result));
+      resultReaction.hidden = false;
+      resultLabel.textContent = result.label;
+      resultOriginal.src = assetUrl(result.original_url);
+      resultCrop.src = assetUrl(result.crop_url);
+      resultImages.hidden = false;
+      resultMetrics.hidden = false;
+      resultConfidence.textContent = formatPercent(result.cat_detection.confidence);
+      resultOrangeScore.textContent = formatPercent(result.orange_score);
+    }
+
+    function showError(message, reactionImageUrl = "/frontend/images/silly.png") {
+      uploadStatus.textContent = message;
+      resultTitle.textContent = "Could not analyze this image";
+      resultSummary.hidden = true;
+      resultError.hidden = false;
+      resultError.textContent = message;
+      resultStatus.hidden = true;
+      resultStatus.textContent = "";
+      resultReaction.src = assetUrl(reactionImageUrl);
+      resultReaction.hidden = false;
+      resultImages.hidden = true;
+      resultMetrics.hidden = true;
+      resultOriginal.removeAttribute("src");
+      resultCrop.removeAttribute("src");
+      resultConfidence.textContent = "--";
+      resultOrangeScore.textContent = "--";
+    }
+
+    function errorMessageForStatus(status) {
+      if (status === 405) {
+        return "The upload reached a server that does not accept image analysis. Restart Flask and open the site through http://127.0.0.1:5000.";
+      }
+
+      if (status === 404) {
+        return "The analysis route was not found. Make sure the Flask app is running from app.py.";
+      }
+
+      return `Server returned ${status}.`;
+    }
+
+    async function analyzeFile(file) {
+      if (!file) {
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("image", file);
+      setLoadingState();
+
+      try {
+        const response = await fetch(analyzeUrl(), {
+          method: "POST",
+          body: formData,
+        });
+        resultStatus.textContent = "Reading analysis result...";
+        const responseText = await response.text();
+        let result = {};
+
+        try {
+          result = responseText ? JSON.parse(responseText) : {};
+        } catch {
+          if (!response.ok) {
+            throw new Error(errorMessageForStatus(response.status));
+          }
+          throw new Error("The server did not return a valid analysis result.");
+        }
+
+        if (!response.ok) {
+          showError(
+            result.error || errorMessageForStatus(response.status),
+            result.reaction_image_url || "/frontend/images/silly.png"
+          );
+          return;
+        }
+
+        if (!validateResult(result)) {
+          throw new Error("The analyzer returned an incomplete result.");
+        }
+
+        showResult(result);
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+
+    function analyzeSelectedFile() {
+      analyzeFile(fileInput.files[0]);
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      analyzeSelectedFile();
+    });
+
+    fileInput.addEventListener("change", analyzeSelectedFile);
+
+    dropContainer.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      dropContainer.classList.add("is-dragging");
+    });
+
+    dropContainer.addEventListener("dragleave", () => {
+      dropContainer.classList.remove("is-dragging");
+    });
+
+    dropContainer.addEventListener("drop", (event) => {
+      event.preventDefault();
+      dropContainer.classList.remove("is-dragging");
+
+      if (!event.dataTransfer.files.length) {
+        return;
+      }
+
+      analyzeFile(event.dataTransfer.files[0]);
+    });
+
+    document.querySelectorAll("[data-close-result]").forEach((button) => {
+      button.addEventListener("click", closeResultModal);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !modal.hidden) {
+        closeResultModal();
+      }
+    });
+  </script>
+</body>
+
+</html>

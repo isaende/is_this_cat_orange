@@ -9,9 +9,14 @@
   <body>
     <main class="shell">
       <section class="panel result-panel">
-        <p class="eyebrow">result</p>
-        <h1>{{ result.message }}</h1>
-        <p class="subtle">Detected fur color: <strong>{{ result.label }}</strong></p>
+        <div class="result-heading">
+          <div class="result-copy">
+            <p class="eyebrow">result</p>
+            <h1>{{ result.message }}</h1>
+            <p class="subtle">Detected fur color: <strong>{{ result.label }}</strong></p>
+          </div>
+          <img class="result-reaction" src="{{ result.reaction_image_url }}" alt="">
+        </div>
 
         <div class="image-grid">
           <figure>
