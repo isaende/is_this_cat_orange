@@ -1,6 +1,6 @@
 # is this cat orange??
 
-A small Flask web app that receives a cat image, detects and crops the cat with YOLO, and estimates whether the cat has orange fur using OpenCV color analysis.
+A Flask web app that receives a cat image, detects and crops the cat with YOLO, and estimates whether the cat has orange fur using OpenCV color analysis.
 
 This project is open source and intended for educational/demonstration purposes.
 
