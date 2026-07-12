@@ -261,7 +261,9 @@
 
     function showError(message, reactionImageUrl = "/frontend/images/silly.png") {
       uploadStatus.textContent = message;
-      resultTitle.textContent = "Could not analyze this image";
+      resultTitle.textContent = message === "that's not a cat"
+        ? "that's not a cat"
+        : "Could not analyze this image";
       resultSummary.hidden = true;
       resultError.hidden = false;
       resultError.textContent = message;
@@ -279,7 +281,7 @@
 
     function errorMessageForStatus(status) {
       if (status === 405) {
-        return "The upload reached a server that does not accept image analysis. Restart Flask and open the site through http://127.0.0.1:5000.";
+        return "The upload reached a server that does not accept image analysis. Restart Flask and open the site through http://127.0.0.1:5001.";
       }
 
       if (status === 404) {
@@ -287,6 +289,14 @@
       }
 
       return `Server returned ${status}.`;
+    }
+
+    function networkErrorMessage(error) {
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        return "Could not reach the analyzer. Start Flask with python app.py and open http://127.0.0.1:5001.";
+      }
+
+      return error.message || "Could not reach the analyzer.";
     }
 
     async function analyzeFile(file) {
@@ -330,7 +340,7 @@
 
         showResult(result);
       } catch (error) {
-        showError(error.message);
+        showError(networkErrorMessage(error));
       }
     }
 

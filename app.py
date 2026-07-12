@@ -25,6 +25,7 @@ ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 HAPPY_IMAGE = "images/cat_happy.png"
 CONFUSED_IMAGE = "images/confused.jpg"
 SILLY_IMAGE = "images/silly.png"
+NO_CAT_MESSAGE = "that's not a cat"
 
 app = Flask(
     __name__,
@@ -64,19 +65,19 @@ def api_json(payload: dict[str, Any], status_code: int) -> tuple[Any, int]:
 
 def reaction_image_for_result(is_orange: bool, label: str) -> str:
     if is_orange:
-        return url_for("static", filename=HAPPY_IMAGE)
+        return f"/frontend/{HAPPY_IMAGE}"
 
     if label == "mixed/unknown":
-        return url_for("static", filename=CONFUSED_IMAGE)
+        return f"/frontend/{CONFUSED_IMAGE}"
 
-    return url_for("static", filename=SILLY_IMAGE)
+    return f"/frontend/{SILLY_IMAGE}"
 
 
 def reaction_image_for_error(message: str) -> str:
-    if "Nenhum gato" in message or "nenhum deles parece ser um gato" in message:
-        return url_for("static", filename=SILLY_IMAGE)
+    if message == NO_CAT_MESSAGE:
+        return f"/frontend/{SILLY_IMAGE}"
 
-    return url_for("static", filename=SILLY_IMAGE)
+    return f"/frontend/{SILLY_IMAGE}"
 
 
 def resolve_model_path() -> Path:
@@ -182,13 +183,13 @@ def detect_cat(image: np.ndarray) -> CatBox:
     results = model(image, conf=CONFIDENCE_THRESHOLD, verbose=False)
 
     if not results:
-        raise AnalysisError("Nenhum gato foi detectado na imagem.")
+        raise AnalysisError(NO_CAT_MESSAGE)
 
     result = results[0]
     boxes = getattr(result, "boxes", None)
 
     if boxes is None or len(boxes) == 0:
-        raise AnalysisError("Nenhum gato foi detectado na imagem.")
+        raise AnalysisError(NO_CAT_MESSAGE)
 
     names = getattr(result, "names", None) or getattr(model, "names", {})
     name_items = names.items() if isinstance(names, dict) else enumerate(names)
@@ -222,7 +223,7 @@ def detect_cat(image: np.ndarray) -> CatBox:
         )
 
     if not cat_candidates:
-        raise AnalysisError("Detectei objetos, mas nenhum deles parece ser um gato.")
+        raise AnalysisError(NO_CAT_MESSAGE)
 
     return max(cat_candidates, key=lambda item: item[0])[1]
 
@@ -319,43 +320,50 @@ def classify_fur_color(crop: np.ndarray) -> ColorAnalysis:
     red = pixels[:, 2].astype(np.float32)
 
     orange = (
-        (hue <= 27)
-        & (saturation >= 45)
-        & (value >= 50)
-        & (red >= green * 1.05)
-        & (red >= blue * 1.28)
+        (hue >= 3)
+        & (hue <= 24)
+        & (saturation >= 65)
+        & (value >= 70)
+        & (red >= green * 1.22)
+        & (red >= blue * 1.75)
     )
     cream_or_light_orange = (
-        (hue <= 33)
-        & (saturation >= 22)
-        & (saturation < 120)
-        & (value >= 115)
-        & (red >= green * 1.02)
-        & (green >= blue * 1.04)
+        (hue >= 5)
+        & (hue <= 25)
+        & (saturation >= 45)
+        & (saturation < 145)
+        & (value >= 135)
+        & (red >= green * 1.16)
+        & (red >= blue * 1.55)
+        & (green >= blue * 1.12)
     )
     black = value <= 58
     white = (saturation <= 38) & (value >= 188)
     gray = (saturation <= 45) & (value > 58) & (value < 188)
+    orange_family = orange | cream_or_light_orange
     brown_tabby = (
         (hue <= 25)
-        & (saturation >= 40)
+        & (saturation >= 35)
         & (value > 45)
-        & (value < 150)
-        & (red >= blue * 1.12)
+        & (value < 165)
+        & (red >= blue * 1.10)
+        & ~orange_family
     )
-
-    orange_family = orange | cream_or_light_orange
 
     ratios = {
         "orange": ratio(orange_family),
         "black": ratio(black),
         "white": ratio(white),
         "gray": ratio(gray),
-        "brown_tabby": ratio(brown_tabby & ~orange_family),
+        "brown_tabby": ratio(brown_tabby),
     }
 
     orange_score = ratios["orange"]
-    is_orange = orange_score >= 0.16
+    brown_tabby_dominates = (
+        ratios["brown_tabby"] >= 0.30
+        and ratios["brown_tabby"] >= orange_score * 1.35
+    )
+    is_orange = orange_score >= 0.16 and not brown_tabby_dominates
 
     if is_orange and ratios["black"] >= 0.16 and ratios["white"] >= 0.12:
         label = "calico/tortie"
@@ -446,13 +454,13 @@ def analyze_api() -> tuple[Any, int]:
             exc.status_code,
         )
     except RequestEntityTooLarge:
-        message = "Imagem muito grande. Use um arquivo de ate 12 MB."
+        message = "image too large. Use an image up to 12 MB."
         return api_json(
             {"error": message, "reaction_image_url": reaction_image_for_error(message)},
             413,
         )
     except Exception:
-        message = "Nao consegui analisar essa imagem agora."
+        message = "Could not analyze the image at this time."
         return api_json(
             {"error": message, "reaction_image_url": reaction_image_for_error(message)},
             500,
